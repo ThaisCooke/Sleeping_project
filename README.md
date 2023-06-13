@@ -79,6 +79,8 @@ It seems to be no correlation between working out and a better night sleep. The 
 * Most of the sleep disruptions were caused by noise or caregiving
 * Three consecutive good night sleep is important to feel overall not fatigued during the day
 
+<p>&nbsp;</p>
+
 ## Recommendations:
 
 * Go to bed at a reasonable time
