@@ -291,7 +291,7 @@ AND Fatigueness_during_the_day = @Fatigueness_during_the_day
 
 
 /*When the three day sleep target is 'On Target', it shows that most of the days 
-I wake up rested and don't have much fatigue during the day*/
+the restdness is up and the  fatigue during the day is low */
 
 
 --7. Does working out helps for better night sleep?
