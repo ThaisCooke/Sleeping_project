@@ -5,7 +5,7 @@ The App "Sleep Watch" was used to collect data of my sleeping patterns. This dat
 
 This project is to check the correlation between a good night sleep and restfulness, and the factors that contribute to a restful night.
 
-The thought process is documented here, and all the coding can be found above
+The thought process is documented here, and all the coding can be found on the side
 
 <p>&nbsp;</p>
 
