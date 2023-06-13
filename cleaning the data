@@ -1,0 +1,78 @@
+
+/*Clean the data:
+1. I considered any percentage of sleep disruption that was above 0.05 as a night classified as "Difficult Staying Asleep".
+I Started by fixing the "Difficult staying asleep", which should be "1" if the percentage of lost sleep is more than 5%.
+To find those dates, I did the following:*/
+
+
+
+--To fix "Difficult staying asleep", and replace "0" by "1", first I had to check which dates needed to be altered:
+
+
+ SELECT CAST ([Date] AS Date) AS [Date],
+  [Difficult Staying asleep],
+  Sleep_disruption_percentage
+  FROM [Sleep_Study].[dbo].[sleep]
+  WHERE Sleep_disruption_percentage > 0.05
+  AND [Difficult Staying asleep] = 0
+
+  --Which gave me those results:
+
+  [Date]			Difficult Staying asleep		Sleep_disruption_percentage
+2023-02-06					0							0.08
+2023-04-10					0							0.055
+2023-05-21					0							0.13
+2023-05-24					0							0.063
+
+
+--Those records needed to be updated. The UPDATE statement was used:
+
+UPDATE [Sleep_Study].[dbo].[sleep]
+  SET [Difficult Staying asleep]  = '1'
+  WHERE [Date] = '2023-02-06' 
+
+  UPDATE [Sleep_Study].[dbo].[sleep]
+  SET [Difficult Staying asleep]  = '1'
+  WHERE [Date] = '2023-04-10'
+
+  UPDATE [Sleep_Study].[dbo].[sleep]
+  SET [Difficult Staying asleep]  = '1'
+  WHERE [Date] = '2023-05-21'
+
+  UPDATE [Sleep_Study].[dbo].[sleep]
+  SET [Difficult Staying asleep]  = '1'
+  WHERE [Date] = '2023-05-24'
+
+  --When checking the query, the results had been updated:
+
+  SELECT CAST ([Date] AS Date) AS [Date],
+  [Difficult Staying asleep],
+  Sleep_disruption_percentage
+  FROM [Sleep_Study].[dbo].[sleep]
+  WHERE Sleep_disruption_percentage > 0.05
+  AND [Difficult Staying asleep] = 0
+
+  [Date]			Difficult Staying asleep		Sleep_disruption_percentage
+
+
+  --There was a typo on the table. The table said "Completed Rested" instead of "Completely Rested".
+  --To fix that, the UPDATE statement was used:
+
+  UPDATE [Sleep_Study].[dbo].[sleep]
+  SET Restdness_when_waking_up  = 'Completely Rested'
+  WHERE Restdness_when_waking_up = 'Completed Rested'
+
+
+/*2. Decide what to do with NULLS*/
+
+--*I decided to delete those rows instead of trying to populate it, since there was no data recorded for all the fields.
+--The DELETE statement was used
+
+DELETE FROM [Sleep_Study].[dbo].[sleep]
+  WHERE [Workout early the day before] IS NULL
+
+--There was one "NULL" on day 05-13-2023. That was replaced by the data for that day:
+
+UPDATE [Sleep_Study].[dbo].[sleep]
+  SET Three_day_Sleep_Target  = 'On Target'
+  WHERE [Date] = '2023-05-13'
