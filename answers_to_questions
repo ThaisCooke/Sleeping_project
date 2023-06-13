@@ -1,0 +1,313 @@
+/*Questions to be answered, now with the data cleaned:
+
+1. What is the average sleep (in hours) that I had during this period of time?
+2. How does the average sleep (in hours) compares to the fatigue during the day?
+3. How does sleep disruption percentage relates to fatigueness during the day?
+4. What is the main sleep disruption factor that has been recorded in this period of time? 
+5. What is the main factor (in percentage) that made me lose sleep and impacted the restdness when waking up the most 
+  (or the fatigueness during the day)?
+6. Create a SP to play with parameters and answer: How does three day sleep target relates to fatigueness during the day?
+7. Does working out helps for better night sleep?*/
+
+
+
+-- 1. What is the average sleep (in hours) that I had during this period of time?
+
+SELECT AVG (total_sleep_time_minutes) / 60 AS Avg_sleep_per_night_in_hours
+  FROM [Sleep_Study].[dbo].[sleep]
+
+  --Avg_sleep_per_night_in_hours: 7.78
+  
+
+
+   --2. How does the average sleep (in hours) compares to the fatigue during the day?
+
+   SELECT 
+  AVG (total_sleep_time_minutes) / 60 AS Avg_sleep_per_night_in_hours
+  FROM [Sleep_Study].[dbo].[sleep]
+  WHERE
+  Fatigueness_during_the_day = 'Not at all Fatigued'
+
+
+  SELECT 
+  AVG (total_sleep_time_minutes) / 60 AS Avg_sleep_per_night_in_hours
+  FROM [Sleep_Study].[dbo].[sleep]
+  WHERE
+  Fatigueness_during_the_day = 'Completely Fatigued'
+
+
+  /*On the days where there was no fatigueness during the day, the average sleep was 8.47 hr, vs 7.26 hr 
+  on the days where there was a lot of fatigueness during the day*/
+
+
+  --3. How does sleep disruption percentage relates to fatigueness during the day?
+
+
+ SELECT 
+  AVG(Sleep_Disruption_percentage * 100) AS Sleep_disruption_percentage
+  FROM [Sleep_Study].[dbo].[sleep]
+  WHERE
+  Fatigueness_during_the_day = 'Completely Fatigued'
+
+  SELECT 
+  AVG(Sleep_Disruption_percentage * 100) AS Sleep_disruption_percentage
+  FROM [Sleep_Study].[dbo].[sleep]
+  WHERE
+  Fatigueness_during_the_day = 'Not at all Fatigued'
+
+  /*On average, the sleep disruption was about 8,12% when the fatigueness was recorded as "Completely Fatigued" 
+  vs 1% when the fatigueness was recorded as "Not at all Fatigued"*/
+  
+--It looks like sleep disruption has a big impact on the fatigue in the next day.
+
+   --4. What is the main sleep disruption factor that has been recorded in this period of time? 
+
+ SELECT 
+ SUM (Disrupted_by_noise) AS disrupted_by_noise,
+ SUM(Disrupted_by_caregiving) AS disrupted_by_caregiving,
+ SUM(nightmare) AS nightmare,
+ SUM(stress_anxiety) AS stress_anxiety,
+ SUM(alcohol_prior_bedtime) AS alcohol_before_bedtime
+ FROM [Sleep_Study].[dbo].[sleep]
+ 
+ 
+ --Disrupted by noise has had the most occurrencies (45 in total), followed by disrupted by caregiving (37 occurrencies)
+
+  /*5. What is the main factor (in percentage) that made me lose sleep and impacted the restdness when waking up the most 
+  (or the fatigueness during the day)?*/
+  
+  SELECT 
+      ROUND (SUM (Disrupted_by_noise/97 *100), 2) AS disrupted_by_noise_percent,
+      ROUND (SUM (Disrupted_by_caregiving/97 *100), 2) AS disrupted_by_caregiving_percent,
+      ROUND (SUM(Nightmare/ 97 *100), 2) AS Nightmare_percent,
+      ROUND (SUM(Stress_Anxiety / 97 *100), 2) AS Stress_anxiety_percent,
+      ROUND (SUM(Alcohol_prior_bedtime/97 *100), 2) AS alcohol_prior_bedtime_percent
+	  FROM [Sleep_Study].[dbo].[sleep]
+	WHERE Difficult_Staying_asleep = '1' AND
+ Restdness_when_waking_up = 'Not at all Rested' OR
+ Fatigueness_during_the_day = 'Completely Fatigued'
+
+
+ /*Disrupted by noise was the main factor associated with the difficulty staying asleep and restdness when waking up (16.49%),
+ followed by Disrupted by Caregiving (14.43%)*/
+
+
+--6. Create a SP to play with parameters:
+
+--I decided to only include a table with a few columns for the analysis, with the parameters. The SP is as below:
+
+CREATE PROCEDURE [dbo].[Average_Sleep_time_updated]
+@Three_day_Sleep_target varchar(30),
+@Restdness_when_waking_up varchar(30),
+@Fatigueness_during_the_day varchar (30)
+
+AS
+
+DROP TABLE IF EXISTS Sleep_Time_Table
+
+CREATE TABLE Sleep_Time_Table
+(Date datetime,
+workout_early_the_day_before float,
+Sleep_disruption_percentage float,
+Avg_sleep_per_night_in_hours float,
+  Restdness_when_waking_up varchar (30),
+  Fatigueness_during_the_day varchar (30),
+  Three_day_sleep_target varchar (30))
+
+  INSERT INTO Sleep_Time_Table
+
+  SELECT 
+  CAST ([Date] AS date) AS Date,
+  Workout_early_the_day_before,
+  Sleep_Disruption_percentage, 
+  AVG (total_sleep_time_minutes) / 60 AS Avg_sleep_per_night_in_hours,
+  Restdness_when_waking_up,
+  Fatigueness_during_the_day,
+  Three_day_sleep_target
+  FROM [Sleep_Study].[dbo].[sleep]
+  WHERE Three_day_sleep_target = @Three_day_Sleep_target
+  AND Restdness_when_waking_up = @Restdness_when_waking_up
+AND Fatigueness_during_the_day = @Fatigueness_during_the_day
+  GROUP BY 
+  [Date],
+  Sleep_Disruption_percentage, 
+  [Workout_early_the_day_before],
+  Total_sleep_time_minutes,
+  Restdness_when_waking_up,
+  Fatigueness_during_the_day,
+  Three_day_sleep_target
+
+  SELECT *
+  FROM Sleep_Time_Table
+  WHERE Three_day_sleep_target = @Three_day_Sleep_target
+  AND Restdness_when_waking_up = @Restdness_when_waking_up
+  AND Fatigueness_during_the_day = @Fatigueness_during_the_day
+
+
+  EXEC [dbo].[Average_Sleep_Time]
+  @Three_day_Sleep_Target = 'Under Target',
+  @Restdness_when_waking_up = 'Not at all Rested',
+  @Fatigueness_during_the_day = 'Completely Fatigued'
+
+
+  --I wanted to make some changes on the SP. Using "modify", I made those changes for the final SP:
+
+
+  USE [Sleep_Study]
+GO
+/****** Object:  StoredProcedure [dbo].[Average_Sleep_time]    Script Date: 6/7/2023 6:55:56 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[Average_Sleep_time]
+@Three_day_Sleep_target varchar(30),
+@Restdness_when_waking_up varchar(30),
+@Fatigueness_during_the_day varchar (30)
+
+AS
+
+DROP TABLE IF EXISTS Sleep_Time_Table
+
+CREATE TABLE Sleep_Time_Table
+(Date datetime,
+Sleep_disruption_percentage float,
+Avg_sleep_per_night_in_hours float,
+  Restdness_when_waking_up varchar (30),
+  Fatigueness_during_the_day varchar (30),
+  Three_day_sleep_target varchar (30))
+
+  INSERT INTO Sleep_Time_Table (Date,
+  Sleep_disruption_percentage, 
+  Avg_sleep_per_night_in_hours, 
+  Restdness_when_waking_up, 
+  Fatigueness_during_the_day,
+  Three_day_sleep_target)
+
+  SELECT 
+  CAST ([Date] AS date) AS Date,
+  Sleep_Disruption_percentage * 100 AS Sleep_disruption_percentage, 
+  AVG (total_sleep_time_minutes) / 60 AS Avg_sleep_per_night_in_hours,
+  Restdness_when_waking_up,
+  Fatigueness_during_the_day,
+  Three_day_sleep_target
+  FROM [Sleep_Study].[dbo].[sleep]
+  WHERE Three_day_sleep_target = @Three_day_Sleep_target
+  AND Restdness_when_waking_up = @Restdness_when_waking_up
+AND Fatigueness_during_the_day = @Fatigueness_during_the_day
+  GROUP BY 
+  [Date],
+  Sleep_Disruption_percentage, 
+  Total_sleep_time_minutes,
+  Restdness_when_waking_up,
+  Fatigueness_during_the_day,
+  Three_day_sleep_target
+
+  SELECT *
+  FROM Sleep_Time_Table
+  WHERE Three_day_sleep_target = @Three_day_Sleep_target
+  AND Restdness_when_waking_up = @Restdness_when_waking_up
+  AND Fatigueness_during_the_day = @Fatigueness_during_the_day
+
+
+  -- Playing with the parameters using SP:
+
+  --When the three_day_sleep_target was set as "On Target" vs restdness when waking up (considering no fatigue during the day):
+  
+  --Completely Rested:
+  DECLARE @count INT;
+
+  EXEC [dbo].[Average_Sleep_Time]
+
+
+@Three_day_Sleep_Target = 'On Target',
+  @Restdness_when_waking_up = 'Completely Rested',
+  @Fatigueness_during_the_day = 'Not at all Fatigued'
+
+  SELECT @@rowcount AS 'Number of days' --16 days
+
+
+  --Somewhat Rested:
+  DECLARE @count INT;
+
+  EXEC [dbo].[Average_Sleep_Time]
+
+
+@Three_day_Sleep_Target = 'On Target',
+  @Restdness_when_waking_up = 'Somewhat Rested',
+  @Fatigueness_during_the_day = 'Not at all Fatigued'
+
+  SELECT @@rowcount AS 'Number of days' --9 days
+
+  --Not at all Rested:
+  DECLARE @count INT;
+
+  EXEC [dbo].[Average_Sleep_Time]
+
+
+@Three_day_Sleep_Target = 'On Target',
+  @Restdness_when_waking_up = 'Not at all Rested',
+  @Fatigueness_during_the_day = 'Not at all Fatigued'
+
+  SELECT @@rowcount AS 'Number of days' --0 days
+
+
+ --When the three_day_sleep_target was set as "On Target" vs fatigueness during the day (considering waking up completely rested):
+  
+  --Not at all Fatigued:
+  DECLARE @count INT;
+
+  EXEC [dbo].[Average_Sleep_Time]
+
+
+@Three_day_Sleep_Target = 'On Target',
+  @Restdness_when_waking_up = 'Completely Rested',
+  @Fatigueness_during_the_day = 'Not at all Fatigued'
+
+  SELECT @@rowcount AS 'Number of days' --16 days
+
+  --Somewhat Fatigued:
+  DECLARE @count INT;
+
+  EXEC [dbo].[Average_Sleep_Time]
+
+
+@Three_day_Sleep_Target = 'On Target',
+  @Restdness_when_waking_up = 'Completely Rested',
+  @Fatigueness_during_the_day = 'Somewhat Fatigued'
+
+  SELECT @@rowcount AS 'Number of days' -- 3 days
+
+  --Completely Fatigued:
+  DECLARE @count INT;
+
+  EXEC [dbo].[Average_Sleep_Time]
+
+@Three_day_Sleep_Target = 'On Target',
+  @Restdness_when_waking_up = 'Somewhat Rested',
+  @Fatigueness_during_the_day = 'Completely Fatigued'
+
+  SELECT @@rowcount AS 'Number of days' -- 3 days
+
+
+/*When the three day sleep target is 'On Target', it shows that most of the days 
+I wake up rested and don't have much fatigue during the day*/
+
+
+--7. Does working out helps for better night sleep?
+
+SELECT 
+SUM(workout_early_the_day_before) AS number_of_workout_days
+ FROM [Sleep_Study].[dbo].[sleep]
+ WHERE Restdness_when_waking_up = 'Completely Rested' OR
+ Fatigueness_during_the_day = 'Not at all fatigued'
+
+
+ SELECT 
+SUM(workout_early_the_day_before) AS number_of_workout_days
+ FROM [Sleep_Study].[dbo].[sleep]
+ WHERE Restdness_when_waking_up = 'Not at all Rested' OR
+ Fatigueness_during_the_day = 'Completely fatigued'
+ 
+ /*It seems to be no correlation between working out and a better night sleep. 
+ The number of days were the same, regardless of the level of fatigueness and restdness */
