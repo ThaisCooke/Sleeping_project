@@ -84,5 +84,5 @@ It seems to be no correlation between working out and a better night sleep. The 
 
 * Go to bed at a reasonable time
 * Sleep with earplugs or white noise machine, or move to another room to avoid noise disruption
-* Wait for my kids to grow to sleep throught the night :laughing:
+* Wait for my kids to grow to sleep throughtout the night :laughing:
 * When having a bad night sleep, try to make up for it the next night. The fatigueness can last for up to three days
