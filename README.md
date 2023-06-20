@@ -64,7 +64,7 @@ Disrupted by noise was the main factor associated with the difficulty staying as
 ##### 6. Create a SP to play with parameters:
 
 This was to practice SP and their uses. Check code. The conclusion was when the three day sleep target is 'On Target', it shows that most of the days 
-restdnessis up and fatigue during the day is low
+restdness is up and fatigue during the day is low
 
 ##### 7. Does working out helps for better night sleep?
 
